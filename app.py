@@ -54,21 +54,15 @@ st.markdown("AI-powered churn prediction with strategic retention insights.")
 # PATH SETUP
 # ---------------------------
 import joblib
+import streamlit as st
 
-model = joblib.load("model.pkl")
-le_gender = joblib.load("le_gender.pkl")
-le_geo = joblib.load("le_geo.pkl")
-# ---------------------------
-# LOAD MODEL SAFELY
-# ---------------------------
 try:
-    model = joblib.load(os.path.join(MODEL_DIR, "model.pkl"))
-    le_gender = joblib.load(os.path.join(MODEL_DIR, "le_gender.pkl"))
-    le_geo = joblib.load(os.path.join(MODEL_DIR, "le_geo.pkl"))
+    model = joblib.load("model.pkl")
+    le_gender = joblib.load("le_gender.pkl")
+    le_geo = joblib.load("le_geo.pkl")
 except Exception as e:
     st.error(f"❌ Model loading failed: {e}")
     st.stop()
-
 # ---------------------------
 # SIDEBAR INPUT
 # ---------------------------
@@ -194,5 +188,6 @@ if st.button("Analyze Customer Risk"):
             st.download_button("Download Risk Report (PDF)", f, file_name="Churn_Risk_Report.pdf")
     else:
         st.warning("PDF feature unavailable (install reportlab to enable).")
+
 
 
