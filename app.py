@@ -27,62 +27,42 @@ st.set_page_config(
 )
 
 # ---------------------------
-# PREMIUM ENTERPRISE UI
+# RESPONSIVE FRONTEND STYLE
 # ---------------------------
 st.markdown("""
 <style>
-
-.stApp {
-    background: linear-gradient(135deg, #0f172a, #0b1120);
-    color: white;
-    font-family: 'Segoe UI', sans-serif;
+/* Container for analysis section */
+.analyze-container {
+    padding-left: clamp(10px, 2vw, 50px);
+    padding-right: clamp(10px, 2vw, 50px);
 }
 
-h1 {
-    background: linear-gradient(90deg, #3b82f6, #06b6d4);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
-}
-
+/* Section titles responsive */
 .section-title {
-    font-size: 22px;
+    font-size: clamp(18px, 2vw, 24px);
     font-weight: 600;
-    margin-top: 35px;
-    margin-bottom: 15px;
-    color: #e2e8f0;
+    margin-top: 20px;
 }
 
+/* Metrics: stack on mobile */
+@media (max-width: 768px) {
+    .stMetric {
+        width: 100% !important;
+        margin-bottom: 12px;
+    }
+}
+
+/* Buttons full width */
 .stButton>button {
-    background: linear-gradient(90deg, #3b82f6, #06b6d4);
-    color: white;
-    border-radius: 12px;
+    width: 100% !important;
     height: 3em;
-    font-weight: 600;
-    width: 100%;
-    border: none;
-    transition: 0.3s;
 }
 
-.stButton>button:hover {
-    transform: scale(1.02);
-    box-shadow: 0px 6px 20px rgba(59,130,246,0.4);
+/* Matplotlib image responsive */
+img[alt="plot"] {
+    max-width: 100% !important;
+    height: auto !important;
 }
-
-section[data-testid="stSidebar"] {
-    background-color: #111827;
-}
-
-.stMetric {
-    background: rgba(255,255,255,0.05);
-    padding: 18px;
-    border-radius: 14px;
-}
-
-.block-container {
-    padding-top: 2rem;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -144,10 +124,7 @@ if hasattr(model, "feature_names_in_"):
 # ---------------------------
 # PREDICTION
 # ---------------------------
-if st.button("🚀 Analyze Customer Risk"):
-
-    with st.spinner("Analyzing customer behavior patterns..."):
-        time.sleep(1.5)
+if st.button("Analyze Customer Risk"):
 
     probability = model.predict_proba(input_data)[0][1]
     prediction = model.predict(input_data)[0]
@@ -160,70 +137,41 @@ if st.button("🚀 Analyze Customer Risk"):
         risk_level = "Low Risk"
 
     # ---------------------------
-    # KPI METRICS
+    # ANALYZE CONTAINER START
     # ---------------------------
-    st.markdown('<div class="section-title">📊 Risk Assessment Summary</div>', unsafe_allow_html=True)
+    st.markdown('<div class="analyze-container">', unsafe_allow_html=True)
 
+    # KPI METRICS
+    st.markdown('<div class="section-title">Risk Assessment Summary</div>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
-
     col1.metric("Churn Probability", f"{probability:.2%}")
-
-    if probability > 0.6:
-        col2.metric("Risk Category", risk_level)
-        st.error("🔴 High Risk Customer - Immediate Action Required")
-    elif probability > 0.4:
-        col2.metric("Risk Category", risk_level)
-        st.warning("🟡 Moderate Risk - Monitor Closely")
-    else:
-        col2.metric("Risk Category", risk_level)
-        st.success("🟢 Low Risk - Healthy Customer")
-
+    col2.metric("Risk Category", risk_level)
     col3.metric("Prediction", "Likely to Churn" if prediction == 1 else "Likely to Stay")
 
-    # Progress bar
-    st.progress(int(probability * 100))
-
-    # ---------------------------
     # VISUALIZATION
-    # ---------------------------
-    st.markdown('<div class="section-title">📈 Risk Distribution</div>', unsafe_allow_html=True)
-
+    st.markdown('<div class="section-title">Risk Distribution</div>', unsafe_allow_html=True)
     fig, ax = plt.subplots()
-    fig.patch.set_facecolor('#0f172a')
-    ax.set_facecolor('#0f172a')
-
-    ax.bar(
-        ["Stay", "Churn"],
-        [1 - probability, probability],
-        color=["#22c55e", "#ef4444"]
-    )
-
-    ax.set_ylim(0, 1)
-    ax.set_ylabel("Probability", color="white")
-    ax.tick_params(colors='white')
-
+    ax.bar(["Stay", "Churn"], [1 - probability, probability], color=['green','red'])
+    ax.set_ylim(0,1)
+    ax.set_ylabel("Probability")
     for i, value in enumerate([1 - probability, probability]):
-        ax.text(i, value, f"{value:.1%}", ha='center', va='bottom', color="white")
-
+        ax.text(i, value, f"{value:.1%}", ha='center', va='bottom')
     st.pyplot(fig)
 
-    # ---------------------------
     # RETENTION STRATEGIES
-    # ---------------------------
+    strategies = []
     if probability > 0.6:
-        st.markdown('<div class="section-title">🎯 Strategic Retention Recommendations</div>', unsafe_allow_html=True)
-
+        st.markdown('<div class="section-title">Strategic Retention Recommendations</div>', unsafe_allow_html=True)
         strategies = generate_retention_strategies(model, input_data)
-
         if strategies:
             for s in strategies:
                 st.write("•", s)
         else:
             st.info("No strong retention action required.")
 
-    # ---------------------------
+    st.markdown('</div>', unsafe_allow_html=True)  # ANALYZE CONTAINER END
+
     # PDF REPORT
-    # ---------------------------
     if PDF_AVAILABLE:
         pdf_path = f"churn_report_{int(time.time())}.pdf"
 
@@ -237,6 +185,11 @@ if st.button("🚀 Analyze Customer Risk"):
         elements.append(Paragraph(f"Risk Category: {risk_level}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
+        if strategies:
+            elements.append(Paragraph("Recommended Retention Actions:", styles["Heading2"]))
+            for s in strategies:
+                elements.append(Paragraph(f"- {s}", styles["Normal"]))
+
         doc.build(elements)
 
         with open(pdf_path, "rb") as f:
@@ -245,3 +198,5 @@ if st.button("🚀 Analyze Customer Risk"):
                 f,
                 file_name="Churn_Risk_Report.pdf"
             )
+    else:
+        st.warning("PDF feature unavailable (reportlab not installed).")
