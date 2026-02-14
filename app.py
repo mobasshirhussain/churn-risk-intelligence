@@ -53,8 +53,15 @@ st.markdown("AI-powered churn prediction with strategic retention insights.")
 # ---------------------------
 # PATH SETUP
 # ---------------------------
+import os
+import joblib
+
 BASE_DIR = os.path.dirname(__file__)
-MODEL_DIR = os.path.join(BASE_DIR, "models")
+
+model = joblib.load(os.path.join(BASE_DIR, "model.pkl"))
+le_gender = joblib.load(os.path.join(BASE_DIR, "le_gender.pkl"))
+le_geo = joblib.load(os.path.join(BASE_DIR, "le_geo.pkl"))
+
 
 # ---------------------------
 # LOAD MODEL SAFELY
@@ -192,3 +199,4 @@ if st.button("Analyze Customer Risk"):
             st.download_button("Download Risk Report (PDF)", f, file_name="Churn_Risk_Report.pdf")
     else:
         st.warning("PDF feature unavailable (install reportlab to enable).")
+
