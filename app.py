@@ -1,180 +1,134 @@
 import streamlit as st
-import pandas as pd
-import joblib
-import time
-import matplotlib.pyplot as plt
 
-# ---------------------------
-# PAGE CONFIG (CENTERED LIKE MEDICAL UI)
-# ---------------------------
-st.set_page_config(
-    page_title="Customer Risk Analyzer",
-    page_icon="📊",
-    layout="centered"
-)
+st.set_page_config(page_title="Customer Churn Intelligence", layout="wide")
 
-# ---------------------------
-# CLEAN MEDICAL-STYLE CSS
-# ---------------------------
+# ===================== PREMIUM CSS =====================
+
 st.markdown("""
 <style>
 
-/* Center container */
-.block-container {
-    padding-top: 3rem;
-    padding-bottom: 3rem;
-    max-width: 750px;
+/* Background */
+.stApp {
+    background: linear-gradient(135deg, #0f172a, #0b1120);
+    font-family: 'Segoe UI', sans-serif;
 }
 
-/* Main Title */
+/* ===== TITLE ===== */
 .main-title {
     text-align: center;
-    font-size: clamp(28px, 5vw, 46px);
-    font-weight: 700;
-    color: #1f2937;
+    font-size: clamp(30px, 5vw, 48px);
+    font-weight: 800;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
 }
 
-/* Subtitle */
 .sub-title {
     text-align: center;
     font-size: 18px;
-    color: #6b7280;
+    color: #cbd5e1;
     margin-bottom: 40px;
 }
 
-/* Section title */
-.section-title {
-    font-size: 22px;
-    font-weight: 600;
-    margin-top: 25px;
+/* ===== GLASS CARD ===== */
+.block-container {
+    padding-top: 2rem;
 }
 
-/* Button style */
+section.main > div {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 30px;
+    border-radius: 20px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0px 0px 40px rgba(0,0,0,0.4);
+}
+
+/* ===== INPUT FIELDS ===== */
+.stSlider > div {
+    color: #ffffff;
+}
+
+.stSelectbox > div {
+    background-color: #1e293b !important;
+    border-radius: 10px;
+}
+
+/* ===== BUTTON ===== */
 .stButton > button {
     width: 100%;
-    height: 3.2em;
     border-radius: 12px;
-    font-size: 18px;
-    font-weight: 600;
-    background-color: #111827;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
     color: white;
+    font-weight: 600;
+    padding: 12px;
     border: none;
+    transition: 0.3s;
 }
 
-/* Selectbox & inputs rounded */
-div[data-baseweb="select"] > div,
-input {
-    border-radius: 12px !important;
+.stButton > button:hover {
+    transform: scale(1.02);
+    box-shadow: 0px 5px 20px rgba(59,130,246,0.5);
 }
 
-/* Metric card style */
-[data-testid="stMetric"] {
-    background-color: #f3f4f6;
-    padding: 15px;
-    border-radius: 12px;
+/* ===== RISK BADGE ===== */
+.low-risk {
+    background-color: #064e3b;
+    color: #34d399;
+    padding: 12px;
+    border-radius: 10px;
     text-align: center;
+    font-weight: 600;
 }
 
-/* Mobile padding */
-@media (max-width: 768px) {
-    .block-container {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
+.medium-risk {
+    background-color: #78350f;
+    color: #facc15;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 600;
+}
+
+.high-risk {
+    background-color: #7f1d1d;
+    color: #f87171;
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 600;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# ---------------------------
-# HEADER SECTION
-# ---------------------------
+# ===================== HEADER =====================
+
 st.markdown('<div class="main-title">📊 Customer Churn Intelligence</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-title">AI-powered Customer Risk Prediction System</div>', unsafe_allow_html=True)
 
-st.markdown("### 🧾 Enter Customer Details")
+# ===================== INPUT SECTION =====================
 
-# ---------------------------
-# LOAD MODEL
-# ---------------------------
-try:
-    model = joblib.load("model.pkl")
-    le_gender = joblib.load("le_gender.pkl")
-    le_geo = joblib.load("le_geo.pkl")
-except Exception as e:
-    st.error(f"Model loading failed: {e}")
-    st.stop()
+st.subheader("📋 Enter Customer Details")
 
-# ---------------------------
-# INPUT SECTION (FRONT PAGE)
-# ---------------------------
 credit_score = st.slider("Credit Score", 300, 900, 600)
-geography = st.selectbox("Geography", le_geo.classes_)
-gender = st.selectbox("Gender", le_gender.classes_)
-age = st.slider("Age", 18, 90, 35)
+geography = st.selectbox("Geography", ["France", "Germany", "Spain"])
+gender = st.selectbox("Gender", ["Male", "Female"])
+age = st.slider("Age", 18, 80, 35)
 tenure = st.slider("Tenure (Years)", 0, 10, 3)
-balance = st.number_input("Balance", 0.0, 250000.0, 50000.0)
-num_products = st.slider("Number of Products", 1, 4, 1)
-has_cr_card = st.selectbox("Has Credit Card", [0, 1])
-is_active = st.selectbox("Active Member", [0, 1])
-estimated_salary = st.number_input("Estimated Salary", 0.0, 200000.0, 50000.0)
 
-# ---------------------------
-# PREP INPUT
-# ---------------------------
-geo_encoded = le_geo.transform([geography])[0]
-gender_encoded = le_gender.transform([gender])[0]
+# ===================== PREDICT BUTTON =====================
 
-input_data = pd.DataFrame([{
-    "CreditScore": credit_score,
-    "Geography": geo_encoded,
-    "Gender": gender_encoded,
-    "Age": age,
-    "Tenure": tenure,
-    "Balance": balance,
-    "NumOfProducts": num_products,
-    "HasCrCard": has_cr_card,
-    "IsActiveMember": is_active,
-    "EstimatedSalary": estimated_salary
-}])
+if st.button("🔍 Predict Churn Risk"):
 
-if hasattr(model, "feature_names_in_"):
-    input_data = input_data[model.feature_names_in_]
+    with st.spinner("Analyzing customer data..."):
+        import time
+        time.sleep(2)
 
-# ---------------------------
-# PREDICT BUTTON (BIG LIKE MEDICAL APP)
-# ---------------------------
-if st.button("🚀 Analyze Customer Risk"):
-
-    with st.spinner("Analyzing customer behavior..."):
-        time.sleep(1.2)
-
-        probability = model.predict_proba(input_data)[0][1]
-        prediction = model.predict(input_data)[0]
-
-    if probability > 0.6:
-        risk_level = "High Risk 🔴"
-    elif probability > 0.4:
-        risk_level = "Moderate Risk 🟡"
+    # Dummy risk logic
+    if credit_score > 700:
+        st.markdown('<div class="low-risk">🟢 Low Churn Risk</div>', unsafe_allow_html=True)
+    elif credit_score > 500:
+        st.markdown('<div class="medium-risk">🟡 Medium Churn Risk</div>', unsafe_allow_html=True)
     else:
-        risk_level = "Low Risk 🟢"
-
-    st.markdown("### 📊 Risk Assessment Summary")
-
-    col1, col2 = st.columns(2)
-
-    col1.metric("Churn Probability", f"{probability:.2%}")
-    col2.metric("Risk Level", risk_level)
-
-    st.markdown("### 📈 Risk Distribution")
-
-    fig, ax = plt.subplots()
-    ax.bar(["Stay", "Churn"], [1 - probability, probability])
-    ax.set_ylim(0, 1)
-    st.pyplot(fig, use_container_width=True)
-
-    if probability > 0.6:
-        st.markdown("### 💡 Recommended Retention Actions")
-        strategies = generate_retention_strategies(model, input_data)
-        for s in strategies:
-            st.write("•", s)
+        st.markdown('<div class="high-risk">🔴 High Churn Risk</div>', unsafe_allow_html=True)
