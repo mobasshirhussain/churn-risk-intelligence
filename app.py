@@ -5,7 +5,9 @@ import os
 import time
 import matplotlib.pyplot as plt
 
-# Try importing reportlab safely
+# ---------------------------
+# SAFE PDF IMPORT
+# ---------------------------
 try:
     from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
     from reportlab.lib.styles import getSampleStyleSheet
@@ -29,9 +31,6 @@ st.set_page_config(
 # ---------------------------
 st.markdown("""
 <style>
-body {
-    background-color: #f4f6f9;
-}
 .section-title {
     font-size: 22px;
     font-weight: 600;
@@ -51,11 +50,8 @@ st.title("📊 Customer Churn Risk Intelligence Dashboard")
 st.markdown("AI-powered churn prediction with strategic retention insights.")
 
 # ---------------------------
-# PATH SETUP
+# LOAD MODELS (CLOUD SAFE)
 # ---------------------------
-import joblib
-import streamlit as st
-
 try:
     model = joblib.load("model.pkl")
     le_gender = joblib.load("le_gender.pkl")
@@ -63,6 +59,7 @@ try:
 except Exception as e:
     st.error(f"❌ Model loading failed: {e}")
     st.stop()
+
 # ---------------------------
 # SIDEBAR INPUT
 # ---------------------------
@@ -109,7 +106,6 @@ if st.button("Analyze Customer Risk"):
     probability = model.predict_proba(input_data)[0][1]
     prediction = model.predict(input_data)[0]
 
-    # Risk category logic
     if probability > 0.6:
         risk_level = "High Risk"
     elif probability > 0.4:
@@ -121,7 +117,6 @@ if st.button("Analyze Customer Risk"):
     # KPI METRICS
     # ---------------------------
     st.markdown('<div class="section-title">Risk Assessment Summary</div>', unsafe_allow_html=True)
-
     col1, col2, col3 = st.columns(3)
 
     col1.metric("Churn Probability", f"{probability:.2%}")
@@ -150,7 +145,6 @@ if st.button("Analyze Customer Risk"):
 
     if probability > 0.6:
         st.markdown('<div class="section-title">Strategic Retention Recommendations</div>', unsafe_allow_html=True)
-
         strategies = generate_retention_strategies(model, input_data)
 
         if strategies:
@@ -160,34 +154,33 @@ if st.button("Analyze Customer Risk"):
             st.info("No strong retention action required.")
 
     # ---------------------------
-    # PDF REPORT (Only if available)
+    # PDF REPORT (CLOUD SAFE)
     # ---------------------------
     if PDF_AVAILABLE:
-        pdf_path = os.path.join(BASE_DIR, f"churn_report_{int(time.time())}.pdf")
-        doc = SimpleDocTemplate(pdf_path)
-        elements = []
-        styles = getSampleStyleSheet()
+        pdf_path = f"churn_report_{int(time.time())}.pdf"
 
-        elements.append(Paragraph("Customer Churn Risk Report", styles['Title']))
+        doc = SimpleDocTemplate(pdf_path)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(Paragraph("Customer Churn Risk Report", styles["Title"]))
         elements.append(Spacer(1, 12))
-        elements.append(Paragraph(f"Churn Probability: {probability:.2%}", styles['Normal']))
-        elements.append(Spacer(1, 12))
-        elements.append(Paragraph(f"Risk Category: {risk_level}", styles['Normal']))
+        elements.append(Paragraph(f"Churn Probability: {probability:.2%}", styles["Normal"]))
+        elements.append(Paragraph(f"Risk Category: {risk_level}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
         if strategies:
-            elements.append(Paragraph("Recommended Retention Actions:", styles['Heading2']))
-            elements.append(Spacer(1, 8))
+            elements.append(Paragraph("Recommended Retention Actions:", styles["Heading2"]))
             for s in strategies:
-                elements.append(Paragraph(f"- {s}", styles['Normal']))
-                elements.append(Spacer(1, 6))
+                elements.append(Paragraph(f"- {s}", styles["Normal"]))
 
         doc.build(elements)
 
         with open(pdf_path, "rb") as f:
-            st.download_button("Download Risk Report (PDF)", f, file_name="Churn_Risk_Report.pdf")
+            st.download_button(
+                "📄 Download Risk Report (PDF)",
+                f,
+                file_name="Churn_Risk_Report.pdf"
+            )
     else:
-        st.warning("PDF feature unavailable (install reportlab to enable).")
-
-
-
+        st.warning("PDF feature unavailable (reportlab not installed).")
