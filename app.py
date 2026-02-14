@@ -3,9 +3,7 @@ import pandas as pd
 import joblib
 import os
 import time
-
-# Use Plotly for responsive charts
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
 
 # ---------------------------
 # SAFE PDF IMPORT
@@ -29,13 +27,13 @@ st.set_page_config(
 )
 
 # ---------------------------
-# RESPONSIVE CSS
+# RESPONSIVE FRONTEND STYLE
 # ---------------------------
 st.markdown("""
 <style>
-/* Headings */
+/* Section Titles */
 .section-title {
-    font-size: clamp(18px, 2vw, 24px);
+    font-size: clamp(18px, 2vw, 24px);  /* Responsive font size */
     font-weight: 600;
     margin-top: 20px;
 }
@@ -44,17 +42,31 @@ st.markdown("""
 .stButton>button {
     background-color: #111827;
     color: white;
-    border-radius: 6px;
+    border-radius: 8px;
     height: 3em;
     font-weight: 500;
-    width: 100%;
+    width: 100%;  /* Full width for mobile */
 }
 
-/* Metrics on small screens */
+/* Input fields & sliders (sidebar) full width on small screens */
 @media (max-width: 768px) {
+    .css-1d391kg {  /* Streamlit widget container */
+        width: 100% !important;
+    }
     .stMetric {
         width: 100% !important;
     }
+}
+
+/* Metrics spacing & mobile stacking */
+.stMetric {
+    margin-bottom: 10px;
+}
+
+/* Chart container for responsiveness */
+.block-container {
+    padding-left: clamp(10px, 2vw, 50px);
+    padding-right: clamp(10px, 2vw, 50px);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -133,6 +145,8 @@ if st.button("Analyze Customer Risk"):
     # KPI METRICS
     # ---------------------------
     st.markdown('<div class="section-title">Risk Assessment Summary</div>', unsafe_allow_html=True)
+
+    # Responsive metrics: on mobile they will stack automatically due to CSS
     col1, col2, col3 = st.columns(3)
 
     col1.metric("Churn Probability", f"{probability:.2%}")
@@ -140,34 +154,29 @@ if st.button("Analyze Customer Risk"):
     col3.metric("Prediction", "Likely to Churn" if prediction == 1 else "Likely to Stay")
 
     # ---------------------------
-    # VISUALIZATION (RESPONSIVE)
+    # VISUALIZATION
     # ---------------------------
     st.markdown('<div class="section-title">Risk Distribution</div>', unsafe_allow_html=True)
 
-    fig = go.Figure(
-        data=[go.Bar(
-            x=["Stay", "Churn"],
-            y=[1 - probability, probability],
-            text=[f"{(1 - probability):.1%}", f"{probability:.1%}"],
-            textposition='outside',
-            marker_color=['green', 'red']
-        )]
-    )
-    fig.update_layout(
-        yaxis=dict(range=[0,1]),
-        height=400,
-        margin=dict(l=20,r=20,t=40,b=20),
-        template='plotly_white'
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    fig, ax = plt.subplots()
+    ax.bar(["Stay", "Churn"], [1 - probability, probability], color=['green','red'])
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Probability")
+
+    for i, value in enumerate([1 - probability, probability]):
+        ax.text(i, value, f"{value:.1%}", ha='center', va='bottom')
+
+    st.pyplot(fig)
 
     # ---------------------------
     # RETENTION STRATEGIES
     # ---------------------------
     strategies = []
+
     if probability > 0.6:
         st.markdown('<div class="section-title">Strategic Retention Recommendations</div>', unsafe_allow_html=True)
         strategies = generate_retention_strategies(model, input_data)
+
         if strategies:
             for s in strategies:
                 st.write("•", s)
@@ -175,7 +184,7 @@ if st.button("Analyze Customer Risk"):
             st.info("No strong retention action required.")
 
     # ---------------------------
-    # PDF REPORT
+    # PDF REPORT (CLOUD SAFE)
     # ---------------------------
     if PDF_AVAILABLE:
         pdf_path = f"churn_report_{int(time.time())}.pdf"
