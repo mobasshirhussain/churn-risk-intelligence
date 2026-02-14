@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import joblib
-import os
 import time
 import matplotlib.pyplot as plt
 
@@ -18,73 +17,83 @@ except ImportError:
 from retention_engine import generate_retention_strategies
 
 # ---------------------------
-# PAGE CONFIG
+# PAGE CONFIG (MOBILE OPTIMIZED)
 # ---------------------------
 st.set_page_config(
-    page_title="Churn Risk Intelligence System",
+    page_title="Customer Churn Risk Intelligence",
     page_icon="📊",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="collapsed"
 )
 
 # ---------------------------
-# RESPONSIVE FRONTEND STYLE
-# ---------------------------
-# ---------------------------
-# RESPONSIVE FRONTEND STYLE
+# CLEAN RESPONSIVE CSS
 # ---------------------------
 st.markdown("""
 <style>
-/* Section Titles: responsive font size */
+
+/* Main container padding responsive */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    padding-left: clamp(1rem, 4vw, 4rem);
+    padding-right: clamp(1rem, 4vw, 4rem);
+}
+
+/* Title responsive */
+h1 {
+    font-size: clamp(24px, 4vw, 42px);
+}
+
+/* Section headings */
 .section-title {
     font-size: clamp(18px, 2vw, 24px);
     font-weight: 600;
-    margin-top: 20px;
-}
-
-/* Buttons: full width, nice height and rounded */
-.stButton>button {
-    background-color: #111827;
-    color: white;
-    border-radius: 8px;
-    height: 3em;
-    font-weight: 500;
-    width: 100%;
-}
-
-/* Sidebar inputs & sliders full width on mobile */
-@media (max-width: 768px) {
-    .css-1d391kg {  /* Streamlit widget container */
-        width: 100% !important;
-    }
-    .stMetric {
-        width: 100% !important;
-    }
-}
-
-/* Metrics spacing & mobile stacking */
-.stMetric {
+    margin-top: 25px;
     margin-bottom: 10px;
 }
 
-/* Chart & container padding for mobile */
-.block-container {
-    padding-left: clamp(10px, 2vw, 50px);
-    padding-right: clamp(10px, 2vw, 50px);
+/* Button full width */
+.stButton > button {
+    width: 100%;
+    height: 3em;
+    border-radius: 8px;
+    background-color: #111827;
+    color: white;
+    font-weight: 500;
 }
 
-/* Matplotlib figure scaling on small screens */
-img[alt="plot"] {
-    max-width: 100% !important;
-    height: auto !important;
+/* Metric spacing */
+[data-testid="stMetric"] {
+    background-color: #f9fafb;
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
 }
+
+/* Make chart responsive */
+canvas {
+    max-width: 100% !important;
+}
+
+/* Reduce extra spacing on mobile */
+@media (max-width: 768px) {
+    .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+}
+
 </style>
 """, unsafe_allow_html=True)
 
 # ---------------------------
-# TITLE
+# HEADER
 # ---------------------------
 st.title("📊 Customer Churn Risk Intelligence Dashboard")
 st.markdown("AI-powered churn prediction with strategic retention insights.")
+
+st.divider()
 
 # ---------------------------
 # LOAD MODELS
@@ -100,18 +109,19 @@ except Exception as e:
 # ---------------------------
 # SIDEBAR INPUT
 # ---------------------------
-st.sidebar.header("Customer Profile")
+with st.sidebar:
+    st.header("Customer Profile")
 
-credit_score = st.sidebar.slider("Credit Score", 300, 900, 600)
-geography = st.sidebar.selectbox("Geography", le_geo.classes_)
-gender = st.sidebar.selectbox("Gender", le_gender.classes_)
-age = st.sidebar.slider("Age", 18, 90, 35)
-tenure = st.sidebar.slider("Tenure (Years)", 0, 10, 3)
-balance = st.sidebar.number_input("Balance", 0.0, 250000.0, 50000.0)
-num_products = st.sidebar.slider("Number of Products", 1, 4, 1)
-has_cr_card = st.sidebar.selectbox("Has Credit Card", [0, 1])
-is_active = st.sidebar.selectbox("Active Member", [0, 1])
-estimated_salary = st.sidebar.number_input("Estimated Salary", 0.0, 200000.0, 50000.0)
+    credit_score = st.slider("Credit Score", 300, 900, 600)
+    geography = st.selectbox("Geography", le_geo.classes_)
+    gender = st.selectbox("Gender", le_gender.classes_)
+    age = st.slider("Age", 18, 90, 35)
+    tenure = st.slider("Tenure (Years)", 0, 10, 3)
+    balance = st.number_input("Balance", 0.0, 250000.0, 50000.0)
+    num_products = st.slider("Number of Products", 1, 4, 1)
+    has_cr_card = st.selectbox("Has Credit Card", [0, 1])
+    is_active = st.selectbox("Active Member", [0, 1])
+    estimated_salary = st.number_input("Estimated Salary", 0.0, 200000.0, 50000.0)
 
 # ---------------------------
 # PREPROCESS INPUT
@@ -151,11 +161,10 @@ if st.button("Analyze Customer Risk"):
         risk_level = "Low Risk"
 
     # ---------------------------
-    # KPI METRICS
+    # METRICS
     # ---------------------------
     st.markdown('<div class="section-title">Risk Assessment Summary</div>', unsafe_allow_html=True)
 
-    # Responsive metrics: on mobile they will stack automatically due to CSS
     col1, col2, col3 = st.columns(3)
 
     col1.metric("Churn Probability", f"{probability:.2%}")
@@ -163,27 +172,26 @@ if st.button("Analyze Customer Risk"):
     col3.metric("Prediction", "Likely to Churn" if prediction == 1 else "Likely to Stay")
 
     # ---------------------------
-    # VISUALIZATION
+    # CHART
     # ---------------------------
     st.markdown('<div class="section-title">Risk Distribution</div>', unsafe_allow_html=True)
 
     fig, ax = plt.subplots()
-    ax.bar(["Stay", "Churn"], [1 - probability, probability], color=['green','red'])
+    ax.bar(["Stay", "Churn"], [1 - probability, probability])
     ax.set_ylim(0, 1)
     ax.set_ylabel("Probability")
 
     for i, value in enumerate([1 - probability, probability]):
         ax.text(i, value, f"{value:.1%}", ha='center', va='bottom')
 
-    st.pyplot(fig)
+    st.pyplot(fig, use_container_width=True)
 
     # ---------------------------
     # RETENTION STRATEGIES
     # ---------------------------
-    strategies = []
-
     if probability > 0.6:
         st.markdown('<div class="section-title">Strategic Retention Recommendations</div>', unsafe_allow_html=True)
+
         strategies = generate_retention_strategies(model, input_data)
 
         if strategies:
@@ -193,7 +201,7 @@ if st.button("Analyze Customer Risk"):
             st.info("No strong retention action required.")
 
     # ---------------------------
-    # PDF REPORT (CLOUD SAFE)
+    # PDF REPORT
     # ---------------------------
     if PDF_AVAILABLE:
         pdf_path = f"churn_report_{int(time.time())}.pdf"
@@ -208,19 +216,14 @@ if st.button("Analyze Customer Risk"):
         elements.append(Paragraph(f"Risk Category: {risk_level}", styles["Normal"]))
         elements.append(Spacer(1, 12))
 
-        if strategies:
-            elements.append(Paragraph("Recommended Retention Actions:", styles["Heading2"]))
-            for s in strategies:
-                elements.append(Paragraph(f"- {s}", styles["Normal"]))
-
         doc.build(elements)
 
         with open(pdf_path, "rb") as f:
             st.download_button(
                 "📄 Download Risk Report (PDF)",
                 f,
-                file_name="Churn_Risk_Report.pdf"
+                file_name="Churn_Risk_Report.pdf",
+                use_container_width=True
             )
     else:
         st.warning("PDF feature unavailable (reportlab not installed).")
-
