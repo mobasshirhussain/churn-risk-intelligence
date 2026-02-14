@@ -3,7 +3,9 @@ import pandas as pd
 import joblib
 import os
 import time
-import matplotlib.pyplot as plt
+
+# Use Plotly for responsive charts
+import plotly.graph_objects as go
 
 # ---------------------------
 # SAFE PDF IMPORT
@@ -27,30 +29,44 @@ st.set_page_config(
 )
 
 # ---------------------------
-# PROFESSIONAL STYLE
+# RESPONSIVE CSS
 # ---------------------------
 st.markdown("""
 <style>
+/* Headings */
 .section-title {
-    font-size: 22px;
+    font-size: clamp(18px, 2vw, 24px);
     font-weight: 600;
-    margin-top: 25px;
+    margin-top: 20px;
 }
+
+/* Buttons */
 .stButton>button {
     background-color: #111827;
     color: white;
     border-radius: 6px;
     height: 3em;
     font-weight: 500;
+    width: 100%;
+}
+
+/* Metrics on small screens */
+@media (max-width: 768px) {
+    .stMetric {
+        width: 100% !important;
+    }
 }
 </style>
 """, unsafe_allow_html=True)
 
+# ---------------------------
+# TITLE
+# ---------------------------
 st.title("📊 Customer Churn Risk Intelligence Dashboard")
 st.markdown("AI-powered churn prediction with strategic retention insights.")
 
 # ---------------------------
-# LOAD MODELS (CLOUD SAFE)
+# LOAD MODELS
 # ---------------------------
 try:
     model = joblib.load("model.pkl")
@@ -124,29 +140,34 @@ if st.button("Analyze Customer Risk"):
     col3.metric("Prediction", "Likely to Churn" if prediction == 1 else "Likely to Stay")
 
     # ---------------------------
-    # VISUALIZATION
+    # VISUALIZATION (RESPONSIVE)
     # ---------------------------
     st.markdown('<div class="section-title">Risk Distribution</div>', unsafe_allow_html=True)
 
-    fig, ax = plt.subplots()
-    ax.bar(["Stay", "Churn"], [1 - probability, probability])
-    ax.set_ylim(0, 1)
-    ax.set_ylabel("Probability")
-
-    for i, value in enumerate([1 - probability, probability]):
-        ax.text(i, value, f"{value:.1%}", ha='center', va='bottom')
-
-    st.pyplot(fig)
+    fig = go.Figure(
+        data=[go.Bar(
+            x=["Stay", "Churn"],
+            y=[1 - probability, probability],
+            text=[f"{(1 - probability):.1%}", f"{probability:.1%}"],
+            textposition='outside',
+            marker_color=['green', 'red']
+        )]
+    )
+    fig.update_layout(
+        yaxis=dict(range=[0,1]),
+        height=400,
+        margin=dict(l=20,r=20,t=40,b=20),
+        template='plotly_white'
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
     # ---------------------------
     # RETENTION STRATEGIES
     # ---------------------------
     strategies = []
-
     if probability > 0.6:
         st.markdown('<div class="section-title">Strategic Retention Recommendations</div>', unsafe_allow_html=True)
         strategies = generate_retention_strategies(model, input_data)
-
         if strategies:
             for s in strategies:
                 st.write("•", s)
@@ -154,7 +175,7 @@ if st.button("Analyze Customer Risk"):
             st.info("No strong retention action required.")
 
     # ---------------------------
-    # PDF REPORT (CLOUD SAFE)
+    # PDF REPORT
     # ---------------------------
     if PDF_AVAILABLE:
         pdf_path = f"churn_report_{int(time.time())}.pdf"
