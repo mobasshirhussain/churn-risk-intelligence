@@ -29,26 +29,29 @@ st.set_page_config(
 # ---------------------------
 # RESPONSIVE FRONTEND STYLE
 # ---------------------------
+# ---------------------------
+# RESPONSIVE FRONTEND STYLE
+# ---------------------------
 st.markdown("""
 <style>
-/* Section Titles */
+/* Section Titles: responsive font size */
 .section-title {
-    font-size: clamp(18px, 2vw, 24px);  /* Responsive font size */
+    font-size: clamp(18px, 2vw, 24px);
     font-weight: 600;
     margin-top: 20px;
 }
 
-/* Buttons */
+/* Buttons: full width, nice height and rounded */
 .stButton>button {
     background-color: #111827;
     color: white;
     border-radius: 8px;
     height: 3em;
     font-weight: 500;
-    width: 100%;  /* Full width for mobile */
+    width: 100%;
 }
 
-/* Input fields & sliders (sidebar) full width on small screens */
+/* Sidebar inputs & sliders full width on mobile */
 @media (max-width: 768px) {
     .css-1d391kg {  /* Streamlit widget container */
         width: 100% !important;
@@ -63,10 +66,16 @@ st.markdown("""
     margin-bottom: 10px;
 }
 
-/* Chart container for responsiveness */
+/* Chart & container padding for mobile */
 .block-container {
     padding-left: clamp(10px, 2vw, 50px);
     padding-right: clamp(10px, 2vw, 50px);
+}
+
+/* Matplotlib figure scaling on small screens */
+img[alt="plot"] {
+    max-width: 100% !important;
+    height: auto !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -214,3 +223,4 @@ if st.button("Analyze Customer Risk"):
             )
     else:
         st.warning("PDF feature unavailable (reportlab not installed).")
+
