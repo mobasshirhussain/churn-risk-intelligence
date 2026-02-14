@@ -4,122 +4,99 @@ import joblib
 import time
 import matplotlib.pyplot as plt
 
-try:
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
-    from reportlab.lib.styles import getSampleStyleSheet
-    PDF_AVAILABLE = True
-except:
-    PDF_AVAILABLE = False
-
-from retention_engine import generate_retention_strategies
-
-# ----------------------------
-# PAGE CONFIG
-# ----------------------------
+# ---------------------------
+# PAGE CONFIG (CENTERED LIKE MEDICAL UI)
+# ---------------------------
 st.set_page_config(
-    page_title="Customer Churn Intelligence",
+    page_title="Customer Risk Analyzer",
     page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+    layout="centered"
 )
 
-# ----------------------------
-# PREMIUM UI CSS
-# ----------------------------
+# ---------------------------
+# CLEAN MEDICAL-STYLE CSS
+# ---------------------------
 st.markdown("""
 <style>
 
-/* Main spacing */
+/* Center container */
 .block-container {
-    padding-top: 2rem;
-    padding-left: clamp(1rem, 4vw, 4rem);
-    padding-right: clamp(1rem, 4vw, 4rem);
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+    max-width: 750px;
 }
 
-/* Gradient Header */
-.premium-header {
-    padding: 25px;
-    border-radius: 18px;
-    background: linear-gradient(135deg, #111827, #1f2937);
-    color: white;
+/* Main Title */
+.main-title {
     text-align: center;
-    margin-bottom: 30px;
+    font-size: clamp(28px, 5vw, 46px);
+    font-weight: 700;
+    color: #1f2937;
 }
 
-/* Card style */
-.premium-card {
-    padding: 20px;
-    border-radius: 16px;
-    background-color: var(--secondary-background-color);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+/* Subtitle */
+.sub-title {
+    text-align: center;
+    font-size: 18px;
+    color: #6b7280;
+    margin-bottom: 40px;
 }
 
-/* Buttons */
-.stButton>button {
-    width: 100%;
-    height: 3em;
-    border-radius: 10px;
+/* Section title */
+.section-title {
+    font-size: 22px;
     font-weight: 600;
-    background: linear-gradient(135deg, #2563eb, #1e40af);
+    margin-top: 25px;
+}
+
+/* Button style */
+.stButton > button {
+    width: 100%;
+    height: 3.2em;
+    border-radius: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    background-color: #111827;
     color: white;
     border: none;
 }
 
-/* Risk badges */
-.risk-high {
-    background-color: #fee2e2;
-    color: #b91c1c;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-weight: 600;
-    display: inline-block;
-}
-.risk-moderate {
-    background-color: #fef3c7;
-    color: #b45309;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-weight: 600;
-    display: inline-block;
-}
-.risk-low {
-    background-color: #dcfce7;
-    color: #166534;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-weight: 600;
-    display: inline-block;
+/* Selectbox & inputs rounded */
+div[data-baseweb="select"] > div,
+input {
+    border-radius: 12px !important;
 }
 
-/* Metric styling */
+/* Metric card style */
 [data-testid="stMetric"] {
-    background-color: var(--secondary-background-color);
-    padding: 18px;
-    border-radius: 15px;
+    background-color: #f3f4f6;
+    padding: 15px;
+    border-radius: 12px;
     text-align: center;
 }
 
-/* Responsive Title */
-h1 {
-    font-size: clamp(24px, 4vw, 42px);
+/* Mobile padding */
+@media (max-width: 768px) {
+    .block-container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# ----------------------------
-# HEADER
-# ----------------------------
-st.markdown("""
-<div class="premium-header">
-    <h1>📊 Customer Churn Risk Intelligence</h1>
-    <p>AI-powered prediction with strategic retention insights</p>
-</div>
-""", unsafe_allow_html=True)
+# ---------------------------
+# HEADER SECTION
+# ---------------------------
+st.markdown('<div class="main-title">📊 Customer Churn Intelligence</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">AI-powered Customer Risk Prediction System</div>', unsafe_allow_html=True)
 
-# ----------------------------
+st.markdown("### 🧾 Enter Customer Details")
+
+# ---------------------------
 # LOAD MODEL
-# ----------------------------
+# ---------------------------
 try:
     model = joblib.load("model.pkl")
     le_gender = joblib.load("le_gender.pkl")
@@ -128,26 +105,23 @@ except Exception as e:
     st.error(f"Model loading failed: {e}")
     st.stop()
 
-# ----------------------------
-# SIDEBAR
-# ----------------------------
-with st.sidebar:
-    st.header("Customer Profile")
+# ---------------------------
+# INPUT SECTION (FRONT PAGE)
+# ---------------------------
+credit_score = st.slider("Credit Score", 300, 900, 600)
+geography = st.selectbox("Geography", le_geo.classes_)
+gender = st.selectbox("Gender", le_gender.classes_)
+age = st.slider("Age", 18, 90, 35)
+tenure = st.slider("Tenure (Years)", 0, 10, 3)
+balance = st.number_input("Balance", 0.0, 250000.0, 50000.0)
+num_products = st.slider("Number of Products", 1, 4, 1)
+has_cr_card = st.selectbox("Has Credit Card", [0, 1])
+is_active = st.selectbox("Active Member", [0, 1])
+estimated_salary = st.number_input("Estimated Salary", 0.0, 200000.0, 50000.0)
 
-    credit_score = st.slider("Credit Score", 300, 900, 600)
-    geography = st.selectbox("Geography", le_geo.classes_)
-    gender = st.selectbox("Gender", le_gender.classes_)
-    age = st.slider("Age", 18, 90, 35)
-    tenure = st.slider("Tenure", 0, 10, 3)
-    balance = st.number_input("Balance", 0.0, 250000.0, 50000.0)
-    num_products = st.slider("Products", 1, 4, 1)
-    has_cr_card = st.selectbox("Credit Card", [0, 1])
-    is_active = st.selectbox("Active Member", [0, 1])
-    estimated_salary = st.number_input("Salary", 0.0, 200000.0, 50000.0)
-
-# ----------------------------
-# INPUT PREP
-# ----------------------------
+# ---------------------------
+# PREP INPUT
+# ---------------------------
 geo_encoded = le_geo.transform([geography])[0]
 gender_encoded = le_gender.transform([gender])[0]
 
@@ -167,76 +141,40 @@ input_data = pd.DataFrame([{
 if hasattr(model, "feature_names_in_"):
     input_data = input_data[model.feature_names_in_]
 
-# ----------------------------
-# ANALYZE BUTTON
-# ----------------------------
-if st.button("Analyze Customer Risk"):
+# ---------------------------
+# PREDICT BUTTON (BIG LIKE MEDICAL APP)
+# ---------------------------
+if st.button("🚀 Analyze Customer Risk"):
 
-    with st.spinner("Analyzing customer behavior patterns..."):
-        time.sleep(1.5)
+    with st.spinner("Analyzing customer behavior..."):
+        time.sleep(1.2)
 
         probability = model.predict_proba(input_data)[0][1]
         prediction = model.predict(input_data)[0]
 
     if probability > 0.6:
-        risk_level = "High Risk"
-        risk_class = "risk-high"
+        risk_level = "High Risk 🔴"
     elif probability > 0.4:
-        risk_level = "Moderate Risk"
-        risk_class = "risk-moderate"
+        risk_level = "Moderate Risk 🟡"
     else:
-        risk_level = "Low Risk"
-        risk_class = "risk-low"
+        risk_level = "Low Risk 🟢"
 
-    # ----------------------------
-    # METRICS
-    # ----------------------------
-    col1, col2, col3 = st.columns(3)
+    st.markdown("### 📊 Risk Assessment Summary")
+
+    col1, col2 = st.columns(2)
 
     col1.metric("Churn Probability", f"{probability:.2%}")
-    col2.markdown(f"<div class='{risk_class}'>{risk_level}</div>", unsafe_allow_html=True)
-    col3.metric("Prediction", "Likely to Churn" if prediction == 1 else "Likely to Stay")
+    col2.metric("Risk Level", risk_level)
 
-    st.divider()
+    st.markdown("### 📈 Risk Distribution")
 
-    # ----------------------------
-    # CHART
-    # ----------------------------
     fig, ax = plt.subplots()
     ax.bar(["Stay", "Churn"], [1 - probability, probability])
     ax.set_ylim(0, 1)
-    ax.set_ylabel("Probability")
     st.pyplot(fig, use_container_width=True)
 
-    # ----------------------------
-    # STRATEGIES
-    # ----------------------------
     if probability > 0.6:
-        st.subheader("Strategic Retention Recommendations")
+        st.markdown("### 💡 Recommended Retention Actions")
         strategies = generate_retention_strategies(model, input_data)
         for s in strategies:
             st.write("•", s)
-
-    # ----------------------------
-    # PDF
-    # ----------------------------
-    if PDF_AVAILABLE:
-        pdf_path = f"report_{int(time.time())}.pdf"
-        doc = SimpleDocTemplate(pdf_path)
-        styles = getSampleStyleSheet()
-        elements = []
-
-        elements.append(Paragraph("Customer Churn Risk Report", styles["Title"]))
-        elements.append(Spacer(1, 12))
-        elements.append(Paragraph(f"Churn Probability: {probability:.2%}", styles["Normal"]))
-        elements.append(Paragraph(f"Risk Level: {risk_level}", styles["Normal"]))
-
-        doc.build(elements)
-
-        with open(pdf_path, "rb") as f:
-            st.download_button(
-                "📄 Download Full Risk Report",
-                f,
-                file_name="Churn_Risk_Report.pdf",
-                use_container_width=True
-            )
